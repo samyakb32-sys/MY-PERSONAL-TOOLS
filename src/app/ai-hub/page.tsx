@@ -15,7 +15,7 @@ export default function AiHubPage() {
 
   return (
     <>
-      <Topbar title="AI Hub" />
+      <Topbar section="AI Hub" page="Model Workspace" />
       <main className="flex-1 p-6">
         <Tabs defaultValue="chat">
           <TabsList>

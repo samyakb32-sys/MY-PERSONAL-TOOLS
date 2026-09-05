@@ -105,7 +105,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Topbar title="Settings" />
+      <Topbar section="Dashboard" page="Settings" />
       <main className="flex-1 space-y-6 p-6">
         <p className="text-sm text-muted-foreground">
           All keys below are stored only in this browser&apos;s local storage

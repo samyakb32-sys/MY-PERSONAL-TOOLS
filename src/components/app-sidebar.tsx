@@ -27,8 +27,14 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden w-56 shrink-0 border-r bg-sidebar text-sidebar-foreground md:flex md:flex-col">
-      <div className="flex h-14 items-center border-b px-4 font-semibold">
-        Personal Tools
+      <div className="flex flex-col justify-center gap-0.5 border-b px-4 py-3">
+        <span className="text-lg font-bold tracking-wide">ARIXIA</span>
+        <span
+          className="text-sm text-sidebar-foreground/70"
+          style={{ fontFamily: "'Brush Script MT', 'Brush Script Std', cursive" }}
+        >
+          All in one space
+        </span>
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-2">
         {navItems.map((item) => {

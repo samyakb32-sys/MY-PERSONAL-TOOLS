@@ -2,7 +2,7 @@ import { Topbar } from "@/components/topbar";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { creations } from "@/data/creations";
+import { creations, statusLabel } from "@/data/creations";
 
 const statusVariant = {
   live: "default",
@@ -13,7 +13,7 @@ const statusVariant = {
 export default function CreationsPage() {
   return (
     <>
-      <Topbar title="My Creations" />
+      <Topbar section="Dashboard" page="My Creations" />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex justify-end">
           <Button>Add project</Button>
@@ -25,7 +25,7 @@ export default function CreationsPage() {
               <CardHeader className="flex flex-row items-start justify-between gap-2">
                 <CardTitle>{project.name}</CardTitle>
                 <Badge variant={statusVariant[project.status]}>
-                  {project.status}
+                  {statusLabel[project.status]}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3">

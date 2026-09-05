@@ -15,7 +15,7 @@ const platformIcon: Record<Platform, typeof Camera> = {
 export default function SocialPage() {
   return (
     <>
-      <Topbar title="Social" />
+      <Topbar section="Social" page="Unified Inbox" />
       <main className="flex-1 space-y-6 p-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(Object.keys(socialStats) as Platform[]).map((platform) => {

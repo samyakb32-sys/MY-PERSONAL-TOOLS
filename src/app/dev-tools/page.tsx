@@ -229,7 +229,7 @@ export default function DevToolsPage() {
 
   return (
     <>
-      <Topbar title="Dev Tools" />
+      <Topbar section="Dev Tools" page="Services Status" />
       <main className="flex-1 space-y-6 p-6">
         <Card>
           <CardContent className="flex items-center justify-between">
