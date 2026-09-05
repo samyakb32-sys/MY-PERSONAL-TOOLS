@@ -4,6 +4,7 @@ export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type ChatSession = { id: string; title: string; messages: ChatMessage[] };
 
 const STORAGE_KEY = "personal-tools:chat-sessions";
+export const CHAT_SESSIONS_CHANGE_EVENT = "personal-tools:chat-sessions-changed";
 
 export function readSessions(): ChatSession[] {
   if (typeof window === "undefined") return [];
@@ -21,6 +22,7 @@ export function writeSessions(sessions: ChatSession[]) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    window.dispatchEvent(new Event(CHAT_SESSIONS_CHANGE_EVENT));
   } catch {
     // localStorage unavailable (private mode, quota, etc.) - silently no-op
   }

@@ -9,9 +9,11 @@ import {
   Wrench,
   FolderGit2,
   Settings,
+  LogOut,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 const navItems = [
   { href: "/", label: "Home", icon: LayoutDashboard },
@@ -24,6 +26,7 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user, configured, signOut } = useAuth();
 
   return (
     <aside className="hidden w-56 shrink-0 border-r bg-sidebar text-sidebar-foreground md:flex md:flex-col">
@@ -58,6 +61,19 @@ export function AppSidebar() {
           );
         })}
       </nav>
+      {configured && user && (
+        <div className="flex items-center justify-between gap-2 border-t p-3">
+          <span className="truncate text-xs text-sidebar-foreground/70">{user.email}</span>
+          <button
+            type="button"
+            onClick={() => signOut()}
+            aria-label="Sign out"
+            className="rounded-md p-1.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
