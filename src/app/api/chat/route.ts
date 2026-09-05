@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-export type ChatProvider = "claude" | "chatgpt" | "gemini" | "groq";
+import { callProvider, type ChatProvider, type ChatMessage } from "@/lib/llm";
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+export type { ChatProvider };
 
 type ChatRequestBody = {
   provider: ChatProvider;
@@ -29,97 +29,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    switch (provider) {
-      case "claude":
-        return NextResponse.json({ content: await callClaude(apiKey, model, messages) });
-      case "chatgpt":
-        return NextResponse.json({
-          content: await callOpenAiCompatible(
-            "https://api.openai.com/v1/chat/completions",
-            apiKey,
-            model,
-            messages,
-          ),
-        });
-      case "groq":
-        return NextResponse.json({
-          content: await callOpenAiCompatible(
-            "https://api.groq.com/openai/v1/chat/completions",
-            apiKey,
-            model,
-            messages,
-          ),
-        });
-      case "gemini":
-        return NextResponse.json({ content: await callGemini(apiKey, model, messages) });
-      default:
-        return NextResponse.json({ error: "Unknown provider" }, { status: 400 });
-    }
+    const content = await callProvider(provider, apiKey, model, messages);
+    return NextResponse.json({ content });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 502 });
   }
-}
-
-async function callClaude(apiKey: string, model: string, messages: ChatMessage[]) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 1024,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error?.message ?? `Claude API error ${res.status}`);
-  }
-  return data.content?.[0]?.text ?? "";
-}
-
-async function callOpenAiCompatible(
-  url: string,
-  apiKey: string,
-  model: string,
-  messages: ChatMessage[],
-) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ model, messages }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error?.message ?? `API error ${res.status}`);
-  }
-  return data.choices?.[0]?.message?.content ?? "";
-}
-
-async function callGemini(apiKey: string, model: string, messages: ChatMessage[]) {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: messages.map((m) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }],
-        })),
-      }),
-    },
-  );
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error?.message ?? `Gemini API error ${res.status}`);
-  }
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }

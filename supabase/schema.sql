@@ -62,6 +62,7 @@ create table if not exists automations (
   automation_key text not null,
   enabled boolean not null default false,
   last_run timestamptz,
+  last_result text,
   primary key (user_id, automation_key)
 );
 

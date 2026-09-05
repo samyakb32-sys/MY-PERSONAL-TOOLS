@@ -2,7 +2,7 @@
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export type AutomationState = { enabled: boolean; lastRun: string | null };
+export type AutomationState = { enabled: boolean; lastRun: string | null; lastResult: string | null };
 
 export async function fetchAutomationStates(
   userId: string,
@@ -11,12 +11,17 @@ export async function fetchAutomationStates(
   if (!supabase) return {};
   const { data, error } = await supabase
     .from("automations")
-    .select("automation_key,enabled,last_run")
+    .select("automation_key,enabled,last_run,last_result")
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
   const result: Record<string, AutomationState> = {};
-  for (const row of (data ?? []) as { automation_key: string; enabled: boolean; last_run: string | null }[]) {
-    result[row.automation_key] = { enabled: row.enabled, lastRun: row.last_run };
+  for (const row of (data ?? []) as {
+    automation_key: string;
+    enabled: boolean;
+    last_run: string | null;
+    last_result: string | null;
+  }[]) {
+    result[row.automation_key] = { enabled: row.enabled, lastRun: row.last_run, lastResult: row.last_result };
   }
   return result;
 }

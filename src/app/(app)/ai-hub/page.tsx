@@ -46,7 +46,11 @@ export default function AiHubPage() {
     const nextEnabled = !currentlyEnabled;
     setStates((prev) => ({
       ...prev,
-      [automationId]: { enabled: nextEnabled, lastRun: prev[automationId]?.lastRun ?? null },
+      [automationId]: {
+        enabled: nextEnabled,
+        lastRun: prev[automationId]?.lastRun ?? null,
+        lastResult: prev[automationId]?.lastResult ?? null,
+      },
     }));
     try {
       await setAutomationEnabled(user.id, automationId, nextEnabled);
@@ -113,8 +117,13 @@ export default function AiHubPage() {
                     </div>
                     <p className="text-xs text-muted-foreground">{automation.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      Last run: {state?.lastRun ?? "never"}
+                      Last run: {state?.lastRun ? new Date(state.lastRun).toLocaleString() : "never"}
                     </p>
+                    {state?.lastResult && (
+                      <p className="rounded-md bg-muted p-2 text-xs whitespace-pre-wrap">
+                        {state.lastResult}
+                      </p>
+                    )}
                   </div>
                 );
               })}
