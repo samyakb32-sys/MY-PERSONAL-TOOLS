@@ -1,11 +1,18 @@
+"use client";
+
 import { Topbar } from "@/components/topbar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { aiProviders, automations } from "@/data/ai-providers";
+import { AiChat } from "@/components/ai-chat";
+import { useSettings } from "@/lib/settings";
+import { automations } from "@/data/ai-providers";
 
 export default function AiHubPage() {
+  const { loaded } = useSettings();
+
+  if (!loaded) return null;
+
   return (
     <>
       <Topbar title="AI Hub" />
@@ -16,31 +23,8 @@ export default function AiHubPage() {
             <TabsTrigger value="automations">Automations</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="chat" className="mt-4 space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {aiProviders.map((provider) => (
-                <Badge
-                  key={provider.id}
-                  variant={provider.connected ? "default" : "outline"}
-                >
-                  {provider.name} — {provider.connected ? "connected" : "not connected"}
-                </Badge>
-              ))}
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Chat</CardTitle>
-                <CardDescription>
-                  Connect a provider API key to start chatting.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex h-64 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-                  No API key connected yet.
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="chat" className="mt-4">
+            <AiChat />
           </TabsContent>
 
           <TabsContent value="automations" className="mt-4 space-y-3">

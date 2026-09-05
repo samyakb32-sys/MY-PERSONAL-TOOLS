@@ -8,6 +8,7 @@ import {
   Bot,
   Wrench,
   FolderGit2,
+  Settings,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/ai-hub", label: "AI Hub", icon: Bot },
   { href: "/dev-tools", label: "Dev Tools", icon: Wrench },
   { href: "/creations", label: "My Creations", icon: FolderGit2 },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppSidebar() {
