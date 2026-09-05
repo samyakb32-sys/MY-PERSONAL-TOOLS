@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Check, Database, Cloud, Server, Network } from "lucide-react";
 
 import { Topbar } from "@/components/topbar";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -9,6 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/lib/settings";
 import { fetchGithubRepos, fetchGithubUser, type GithubRepo, type GithubUser } from "@/lib/github";
+
+const healthCategories = [
+  { label: "Database", icon: Database },
+  { label: "APIs", icon: Cloud },
+  { label: "Infrastructure", icon: Server },
+  { label: "Network", icon: Network },
+];
 
 function ConnectPrompt() {
   return (
@@ -18,28 +26,46 @@ function ConnectPrompt() {
   );
 }
 
+function RecentEvents({ items }: { items: string[] }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium text-muted-foreground">Recent Events</p>
+      <ul className="space-y-1 text-sm">
+        {items.map((item, i) => (
+          <li key={i} className="truncate text-muted-foreground before:mr-2 before:content-['•']">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ServiceShell({
   name,
+  status,
+  summary,
   loading,
   error,
   children,
 }: {
   name: string;
+  status: string;
+  summary?: string;
   loading: boolean;
   error: string | null;
-  children: React.ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{name}</CardTitle>
-        <Badge variant={error ? "destructive" : "default"}>
-          {error ? "Error" : "Connected"}
-        </Badge>
+        <Badge variant={error ? "destructive" : "default"}>{error ? "Error" : status}</Badge>
       </CardHeader>
       <CardContent className="space-y-3">
         {loading && <CardDescription>Loading...</CardDescription>}
         {error && <CardDescription className="text-destructive">{error}</CardDescription>}
+        {!loading && !error && summary && <CardDescription>{summary}</CardDescription>}
         {!loading && !error && children}
       </CardContent>
     </Card>
@@ -72,25 +98,17 @@ function GithubCard({ token }: { token: string }) {
   }, [token]);
 
   return (
-    <ServiceShell name="GitHub" loading={loading} error={error}>
-      {user && (
-        <CardDescription>
-          {user.login} — {user.public_repos} public repos
-        </CardDescription>
-      )}
+    <ServiceShell
+      name="GitHub"
+      status="Connected"
+      summary={user ? `${user.login} — ${user.public_repos} public repos` : undefined}
+      loading={loading}
+      error={error}
+    >
       {repos.length > 0 && (
-        <ul className="space-y-1.5 text-sm">
-          {repos.map((repo) => (
-            <li key={repo.id} className="flex items-center justify-between gap-2">
-              <a href={repo.html_url} target="_blank" rel="noreferrer" className="truncate underline">
-                {repo.name}
-              </a>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {repo.open_issues_count} open issues
-              </span>
-            </li>
-          ))}
-        </ul>
+        <RecentEvents
+          items={repos.map((r) => `Updated ${r.name} · ${r.open_issues_count} open issues`)}
+        />
       )}
     </ServiceShell>
   );
@@ -130,21 +148,17 @@ function VercelCard({ token }: { token: string }) {
   }, [token]);
 
   return (
-    <ServiceShell name="Vercel" loading={loading} error={error}>
-      {data && (
-        <>
-          <CardDescription>{data.user.username}</CardDescription>
-          <ul className="space-y-1.5 text-sm">
-            {data.projects.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-2">
-                <span className="truncate">{p.name}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {p.latestState ?? "no deploys"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
+    <ServiceShell
+      name="Vercel"
+      status="Healthy"
+      summary={data ? data.user.username : undefined}
+      loading={loading}
+      error={error}
+    >
+      {data && data.projects.length > 0 && (
+        <RecentEvents
+          items={data.projects.map((p) => `${p.name} · ${p.latestState ?? "no deploys"}`)}
+        />
       )}
     </ServiceShell>
   );
@@ -183,18 +197,9 @@ function SupabaseCard({ token }: { token: string }) {
   }, [token]);
 
   return (
-    <ServiceShell name="Supabase" loading={loading} error={error}>
-      {data && (
-        <ul className="space-y-1.5 text-sm">
-          {data.projects.map((p) => (
-            <li key={p.id} className="flex items-center justify-between gap-2">
-              <span className="truncate">{p.name}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {p.region} · {p.status}
-              </span>
-            </li>
-          ))}
-        </ul>
+    <ServiceShell name="Supabase" status="Healthy" loading={loading} error={error}>
+      {data && data.projects.length > 0 && (
+        <RecentEvents items={data.projects.map((p) => `${p.name} · ${p.region} · ${p.status}`)} />
       )}
     </ServiceShell>
   );
@@ -231,6 +236,31 @@ export default function DevToolsPage() {
     <>
       <Topbar section="Dev Tools" page="Services Status" />
       <main className="flex-1 space-y-6 p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Overall health</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {healthCategories.map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <div
+                    key={cat.label}
+                    className="flex flex-col items-center gap-2 rounded-lg border p-4 text-center"
+                  >
+                    <Icon className="size-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{cat.label}</span>
+                    <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">
+                      <Check className="size-3" />
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
