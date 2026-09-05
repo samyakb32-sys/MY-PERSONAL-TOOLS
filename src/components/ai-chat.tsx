@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Send, Plus, MessageSquare } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,10 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useSettings, type Settings } from "@/lib/settings";
+import { readSessions, writeSessions, newSession, type ChatSession, type ChatMessage as Message } from "@/lib/chat-history";
 import type { ChatProvider } from "@/app/api/chat/route";
-
-type Message = { role: "user" | "assistant"; content: string };
-type ChatSession = { id: string; title: string; messages: Message[] };
 
 const providerMeta: {
   id: ChatProvider;
@@ -25,8 +23,9 @@ const providerMeta: {
   { id: "groq", name: "Groq", keyField: "groqApiKey", defaultModel: "llama-3.3-70b-versatile" },
 ];
 
-function newSession(): ChatSession {
-  return { id: crypto.randomUUID(), title: "New chat", messages: [] };
+function loadOrCreateSessions(): ChatSession[] {
+  const existing = readSessions();
+  return existing.length > 0 ? existing : [newSession()];
 }
 
 export function AiChat() {
@@ -34,10 +33,18 @@ export function AiChat() {
   const [providerId, setProviderId] = useState<ChatProvider>("claude");
   const [model, setModel] = useState(providerMeta[0].defaultModel);
   const [input, setInput] = useState("");
-  const [sessions, setSessions] = useState<ChatSession[]>(() => [newSession()]);
-  const [activeId, setActiveId] = useState(sessions[0].id);
+  const [chatState, setChatState] = useState(() => {
+    const sessions = loadOrCreateSessions();
+    return { sessions, activeId: sessions[0].id };
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { sessions, activeId } = chatState;
+
+  useEffect(() => {
+    writeSessions(sessions);
+  }, [sessions]);
 
   if (!loaded) return null;
 
@@ -51,20 +58,24 @@ export function AiChat() {
   }
 
   function updateActiveMessages(messages: Message[]) {
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === activeId
+    setChatState((prev) => ({
+      ...prev,
+      sessions: prev.sessions.map((s) =>
+        s.id === prev.activeId
           ? { ...s, messages, title: s.title === "New chat" ? messages[0]?.content.slice(0, 30) || s.title : s.title }
           : s,
       ),
-    );
+    }));
   }
 
   function startNewChat() {
     const session = newSession();
-    setSessions((prev) => [session, ...prev]);
-    setActiveId(session.id);
+    setChatState((prev) => ({ sessions: [session, ...prev.sessions], activeId: session.id }));
     setError(null);
+  }
+
+  function selectSession(id: string) {
+    setChatState((prev) => ({ ...prev, activeId: id }));
   }
 
   async function send() {
@@ -129,7 +140,7 @@ export function AiChat() {
             {sessions.map((s) => (
               <button
                 key={s.id}
-                onClick={() => setActiveId(s.id)}
+                onClick={() => selectSession(s.id)}
                 className={cn(
                   "flex w-full items-center gap-1.5 truncate rounded-md px-2 py-1.5 text-left text-xs",
                   s.id === activeId

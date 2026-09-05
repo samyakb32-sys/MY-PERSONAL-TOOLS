@@ -38,6 +38,27 @@ export function readSettings(): Settings {
   }
 }
 
+// useSyncExternalStore requires a stable snapshot reference between calls
+// when nothing changed - cache by the raw localStorage string so we only
+// parse and allocate a new object when it actually changes.
+let cachedRaw: string | null = null;
+let cachedSnapshot: Settings = emptySettings;
+
+function getSnapshot(): Settings {
+  if (typeof window === "undefined") return emptySettings;
+  let raw: string | null;
+  try {
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    raw = null;
+  }
+  if (raw !== cachedRaw) {
+    cachedRaw = raw;
+    cachedSnapshot = readSettings();
+  }
+  return cachedSnapshot;
+}
+
 export function writeSettings(settings: Settings) {
   if (typeof window === "undefined") return;
   try {
@@ -65,7 +86,7 @@ function getSnapshotTrue() {
 }
 
 export function useSettings() {
-  const settings = useSyncExternalStore(subscribe, readSettings, () => emptySettings);
+  const settings = useSyncExternalStore(subscribe, getSnapshot, () => emptySettings);
   const loaded = useSyncExternalStore(subscribe, getSnapshotTrue, getServerSnapshotFalse);
 
   const update = useCallback((patch: Partial<Settings>) => {
