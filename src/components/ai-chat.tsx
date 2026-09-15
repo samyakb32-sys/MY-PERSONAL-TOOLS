@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useSettings, type Settings } from "@/lib/settings";
-import { readSessions, writeSessions, newSession, type ChatSession, type ChatMessage as Message } from "@/lib/chat-history";
+import {
+  readSessions,
+  writeSessions,
+  newSession,
+  CHAT_SESSIONS_CHANGE_EVENT,
+  type ChatSession,
+  type ChatMessage as Message,
+} from "@/lib/chat-history";
 import type { ChatProvider } from "@/app/api/chat/route";
 
 const providerMeta: {
@@ -46,11 +53,31 @@ export function AiChat() {
     writeSessions(sessions);
   }, [sessions]);
 
+  // Sync pulls remote history into localStorage after sign-in; without this the
+  // component would keep its pre-sign-in state and overwrite it on the next write.
+  useEffect(() => {
+    const onExternalChange = () => {
+      const stored = readSessions();
+      if (stored.length === 0) return;
+      setChatState((prev) => {
+        if (JSON.stringify(prev.sessions) === JSON.stringify(stored)) return prev;
+        const activeStillExists = stored.some((s) => s.id === prev.activeId);
+        return { sessions: stored, activeId: activeStillExists ? prev.activeId : stored[0].id };
+      });
+    };
+    window.addEventListener(CHAT_SESSIONS_CHANGE_EVENT, onExternalChange);
+    window.addEventListener("storage", onExternalChange);
+    return () => {
+      window.removeEventListener(CHAT_SESSIONS_CHANGE_EVENT, onExternalChange);
+      window.removeEventListener("storage", onExternalChange);
+    };
+  }, []);
+
   if (!loaded) return null;
 
   const provider = providerMeta.find((p) => p.id === providerId)!;
   const apiKey = settings[provider.keyField];
-  const active = sessions.find((s) => s.id === activeId)!;
+  const active = sessions.find((s) => s.id === activeId) ?? sessions[0];
 
   function selectProvider(id: ChatProvider) {
     setProviderId(id);

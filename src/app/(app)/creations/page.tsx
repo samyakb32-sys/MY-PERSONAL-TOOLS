@@ -95,7 +95,10 @@ export default function CreationsPage() {
     }
   }
 
-  if (authLoading || loading) return null;
+  // Only gate on the fetch when there is actually a user to fetch for, otherwise
+  // a signed-out visitor would sit on a permanently blank page.
+  if (configured && authLoading) return null;
+  if (configured && user && loading) return null;
 
   return (
     <>

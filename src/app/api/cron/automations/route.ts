@@ -4,6 +4,9 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { callProvider, type ChatProvider } from "@/lib/llm";
 import { socialMessages } from "@/data/social";
 
+// LLM calls regularly exceed the default 10s function limit; 60s is the Hobby ceiling.
+export const maxDuration = 60;
+
 const providerPriority: { id: ChatProvider; keyField: string; defaultModel: string }[] = [
   { id: "claude", keyField: "claudeApiKey", defaultModel: "claude-sonnet-5" },
   { id: "chatgpt", keyField: "openaiApiKey", defaultModel: "gpt-4o-mini" },

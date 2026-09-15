@@ -13,10 +13,18 @@ export function useAuth() {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
-    supabase.auth.getUser().then((result: { data: { user: User | null } }) => {
-      setUser(result.data.user);
-      setLoading(false);
-    });
+    supabase.auth
+      .getUser()
+      .then((result: { data: { user: User | null } }) => {
+        setUser(result.data.user);
+      })
+      .catch(() => {
+        // Unreachable Supabase shouldn't leave callers stuck on a loading gate.
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {

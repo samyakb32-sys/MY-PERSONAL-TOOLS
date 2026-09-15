@@ -4,9 +4,11 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { writeSettings, emptySettings, type Settings } from "@/lib/settings";
 import { writeSessions, type ChatSession } from "@/lib/chat-history";
 
-export async function pullRemoteData(userId: string) {
+export type PullResult = { hadRemoteSettings: boolean; hadRemoteSessions: boolean };
+
+export async function pullRemoteData(userId: string): Promise<PullResult> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return;
+  if (!supabase) return { hadRemoteSettings: false, hadRemoteSessions: false };
 
   const [{ data: settingsRow }, { data: sessionRows }] = await Promise.all([
     supabase.from("user_settings").select("data").eq("user_id", userId).maybeSingle(),
@@ -17,16 +19,21 @@ export async function pullRemoteData(userId: string) {
       .order("updated_at", { ascending: false }),
   ]);
 
-  if (settingsRow?.data) {
-    writeSettings({ ...emptySettings, ...(settingsRow.data as Partial<Settings>) });
+  const hadRemoteSettings = Boolean(settingsRow?.data);
+  const hadRemoteSessions = Boolean(sessionRows && sessionRows.length > 0);
+
+  if (hadRemoteSettings) {
+    writeSettings({ ...emptySettings, ...(settingsRow!.data as Partial<Settings>) });
   }
-  if (sessionRows && sessionRows.length > 0) {
+  if (hadRemoteSessions) {
     writeSessions(
       (sessionRows as { id: string; title: string; messages: ChatSession["messages"] }[]).map(
         (r) => ({ id: r.id, title: r.title, messages: r.messages }),
       ),
     );
   }
+
+  return { hadRemoteSettings, hadRemoteSessions };
 }
 
 export async function pushSettings(userId: string, settings: Settings) {

@@ -1,14 +1,30 @@
 import { NextResponse } from "next/server";
 
+import { authenticateRequest } from "@/lib/api-auth";
+import { rateLimit, callerKey } from "@/lib/rate-limit";
+
 export async function POST(req: Request) {
-  let token: string | undefined;
+  const caller = await authenticateRequest();
+  if (!caller) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limit = rateLimit(`supabase:${callerKey(req, caller.userId)}`, 30, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
+  let token: unknown;
   try {
     ({ token } = await req.json());
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!token) {
+  if (typeof token !== "string" || token.trim() === "") {
     return NextResponse.json({ error: "Missing token" }, { status: 400 });
   }
 
