@@ -8,6 +8,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AiChat } from "@/components/ai-chat";
+import { AgentConsole } from "@/components/agent-console";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useSettings, type Settings } from "@/lib/settings";
 import { useAuth } from "@/lib/auth";
 import { fetchAutomationStates, setAutomationEnabled, type AutomationState } from "@/lib/automations";
@@ -66,7 +68,18 @@ export default function AiHubPage() {
       <Topbar section="AI Hub" page="Model Workspace" />
       <main className="flex flex-1 gap-4 overflow-hidden p-6">
         <div className="min-w-0 flex-1">
-          <AiChat />
+          <Tabs defaultValue="chat" className="h-full">
+            <TabsList>
+              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="agent">Agent</TabsTrigger>
+            </TabsList>
+            <TabsContent value="chat" className="min-h-0 flex-1">
+              <AiChat />
+            </TabsContent>
+            <TabsContent value="agent" className="min-h-0 flex-1">
+              <AgentConsole />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className="hidden w-72 shrink-0 space-y-4 xl:block">

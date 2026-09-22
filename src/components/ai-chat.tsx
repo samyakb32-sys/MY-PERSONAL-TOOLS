@@ -18,7 +18,7 @@ import {
 } from "@/lib/chat-history";
 import type { ChatProvider } from "@/app/api/chat/route";
 
-const providerMeta: {
+export const providerMeta: {
   id: ChatProvider;
   name: string;
   keyField: keyof Settings;
